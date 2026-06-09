@@ -1,0 +1,41 @@
+# System
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Next.js Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*.local
+
+# FastAPI Backend
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.pytest_cache/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Playwright & Scraper Assets
+backend/app/projects/
+backend/projects/
+backend/scraper_data/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+docker/data/
+docker/pgdata/
+docker/redisdata/
