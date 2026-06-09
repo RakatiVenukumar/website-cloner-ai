@@ -1,6 +1,6 @@
 # Website Cloner AI
 
-Website Cloner AI is a production-ready web application cloner platform that accepts a URL, scrapes all page content and assets using Playwright, detects structural semantic blocks and text using OpenAI, builds a runnable Next.js 15 template on the fly, provides a live visual text editing interface, and automates deployments to GitHub, Vercel, Render, and Netlify.
+Website Cloner AI is a production-ready web application cloner platform that accepts a URL, scrapes page content and assets using Playwright, detects structural semantic blocks and text using OpenAI, builds a runnable Next.js template on the fly, provides a live visual text editing interface, and automates deployments to GitHub, Vercel, Render, and Netlify.
 
 ## Features
 
@@ -14,7 +14,7 @@ Website Cloner AI is a production-ready web application cloner platform that acc
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS, Shadcn UI, Zustand, React Query, Framer Motion.
+- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS, Shadcn UI, Zustand, React Query, Framer Motion.
 - **Backend**: FastAPI (Python 3.11), SQLAlchemy, PostgreSQL, Redis.
 - **AI Agents**: OpenAI APIs, Playwright.
 - **DevOps**: Docker, Docker Compose, GitHub Actions.
@@ -48,7 +48,8 @@ website-cloner-ai/
    ```
 
 2. **Configure Environment Variables**:
-   - Copy `backend/.env.example` to `backend/.env` and supply your `OPENAI_API_KEY`, Database URL, Redis URL, and Integration credentials.
+   - Copy `backend/.env.example` to `backend/.env` and supply your `OPENAI_API_KEY`, database URL, Redis URL, and integration credentials.
+   - Update `frontend/.env.local` if you are not running the frontend against `http://localhost:8000`.
 
 3. **Spin up Docker Stack**:
    ```bash
@@ -58,3 +59,8 @@ website-cloner-ai/
 4. **Navigate to App**:
    - Web App UI: `http://localhost:3000`
    - FastAPI swagger: `http://localhost:8000/docs`
+
+## Runtime Notes
+
+- The backend container installs Node.js so it can run generated preview projects with `npm install` and `npx next dev`.
+- The frontend defaults to `NEXT_PUBLIC_API_URL=http://localhost:8000` for local Docker Compose usage.

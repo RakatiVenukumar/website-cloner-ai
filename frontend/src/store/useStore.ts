@@ -59,7 +59,7 @@ export const useStore = create<StoreState>((set, get) => ({
   isLoadingProjects: false,
   isCloning: false,
   cloningError: null,
-  apiBase: "http://localhost:8000",
+  apiBase: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
 
   fetchProjects: async () => {
     set({ isLoadingProjects: true });
