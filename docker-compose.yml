@@ -40,7 +40,7 @@ services:
       - PORT=8000
     volumes:
       - ./backend:/app
-      - /app/app/projects # don't overwrite generated projects if mounted
+      - /app/projects # don't overwrite generated projects if mounted
     env_file:
       - ./backend/.env
 
