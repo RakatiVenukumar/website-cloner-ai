@@ -17,7 +17,22 @@ class PreviewManager:
     def _is_port_available(self, port: int) -> bool:
         """Checks if a local port is available for binding."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(('localhost', port)) != 0
+            return s.connect_ex(('127.0.0.1', port)) != 0
+
+    def _is_preview_ready(self, port: int) -> bool:
+        try:
+            import httpx
+
+            response = httpx.get(
+                f"http://127.0.0.1:{port}",
+                timeout=5.0,
+                follow_redirects=True
+            )
+
+            return response.status_code < 600
+
+        except Exception:
+            return False
 
     def _find_available_port(self) -> int:
         """Finds an unused port starting from self.starting_port."""
@@ -64,7 +79,7 @@ class PreviewManager:
 
         # 3. Start Next.js dev server
         # We run it using npx next dev -p {port} to ensure it runs correctly
-        cmd = f"npx next dev -p {port}"
+        cmd = f"npx next dev -p {port} -H 127.0.0.1"
         try:
             process = subprocess.Popen(
                 cmd,
@@ -78,8 +93,33 @@ class PreviewManager:
             # Wait a short moment to check if process failed immediately
             time.sleep(2)
             if process.poll() is not None:
-                _, err = process.communicate()
-                raise Exception(f"Dev server terminated immediately with error: {err}")
+                out, err = process.communicate()
+                logger.error(f"Dev server crashed. STDOUT: {out}\\nSTDERR: {err}")
+                raise Exception(f"Dev server terminated immediately with error: {err or out}")
+
+            # Wait until the server is actually reachable before reporting success.
+            ready = False
+            for _ in range(20):
+                if process.poll() is not None:
+                    # Process died during the warm-up wait phase
+                    out, err = process.communicate()
+                    logger.error(f"Dev server died during startup. STDOUT: {out}\\nSTDERR: {err}")
+                    raise Exception(f"Dev server died during startup: {err or out}")
+
+                if self._is_preview_ready(port):
+                    ready = True
+                    break
+                time.sleep(1)
+
+            if not ready:
+                process.terminate()
+                try:
+                    out, err = process.communicate(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    out, err = process.communicate()
+                logger.error(f"Dev server timeout on port {port}. STDOUT: {out}\\nSTDERR: {err}")
+                raise Exception(f"Dev server did not become ready on port {port}. Logs: {err or out}")
                 
             self.active_processes[project_id] = (process, port)
             logger.info(f"Started Next.js dev server for project {project_id} on port {port}")

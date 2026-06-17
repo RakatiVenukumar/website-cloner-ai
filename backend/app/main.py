@@ -315,7 +315,7 @@ async def preview_proxy(project_id: str, path: str, request: Request, db: Sessio
         else:
             raise HTTPException(status_code=503, detail="Preview server is stopped. Start it first.")
 
-    target_url = f"http://localhost:{port}/{path}"
+    target_url = f"http://127.0.0.1:{port}/{path}"
     
     # Get request body
     body = await request.body()

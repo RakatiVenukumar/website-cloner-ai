@@ -102,9 +102,72 @@ export default function RootLayout({
         page_path = os.path.join(app_routes_dir, "page.tsx")
         page_content = """import fs from 'fs';
 import path from 'path';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 
 export const dynamic = 'force-dynamic';
+
+function sanitizeHtml(rawHtml: string): string {
+  try {
+    const $ = cheerio.load(rawHtml);
+    
+    // Remove scripts and noscripts
+    $('script').remove();
+    $('noscript').remove();
+    
+    $('iframe').remove();
+    $('object').remove();
+    $('embed').remove();
+
+    
+    // Remove modulepreload, prefetch, and script preloads
+    $('link[rel="modulepreload"]').remove();
+    $('link[rel="prefetch"]').remove();
+    $('link[rel="preload"][as="script"]').remove();
+    
+    // Remove inline event handlers that can execute code (e.g. onload, onerror)
+     $('*').each(function () {
+      const attribs = this.attribs || {};
+
+      for (const attr in attribs) {
+        const lower = attr.toLowerCase();
+
+        // Remove JS event handlers
+        if (lower.startsWith('on')) {
+          $(this).removeAttr(attr);
+        }
+
+        // Remove iframe HTML injection
+        if (lower === 'srcdoc') {
+          $(this).removeAttr(attr);
+        }
+
+        // Remove YouTube-specific runtime attributes
+        if (lower.startsWith('data-yt')) {
+          $(this).removeAttr(attr);
+        }
+      }
+    });
+    
+    // Disable link navigation and form submissions to prevent 404 errors in preview
+    $('a').attr('href', 'javascript:void(0);');
+    $('a').removeAttr('target');
+    $('form').attr('onsubmit', 'event.preventDefault();');
+    $('form').attr('action', 'javascript:void(0);');
+    $('button').attr('type', 'button');
+    
+    return $.html();
+  } catch (error) {
+    console.error("Sanitization failed:", error);
+
+    // Fallback sanitization
+    return rawHtml
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+      .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<object[\s\S]*?<\/object>/gi, '')
+      .replace(/<embed[\s\S]*?>/gi, '');
+  }
+}
 
 export default async function Page() {
   const htmlPath = path.join(process.cwd(), 'index.html');
@@ -116,6 +179,9 @@ export default async function Page() {
   }
   
   let html = fs.readFileSync(htmlPath, 'utf8');
+  
+  // Thoroughly sanitize HTML to remove tracking, ads, and crashing application logic
+  html = sanitizeHtml(html);
   
   // Read and replace values
   if (fs.existsSync(contentPath) && fs.existsSync(metaPath)) {
@@ -142,7 +208,7 @@ export default async function Page() {
   }
   
   return (
-    <div dangerouslySetInnerHTML={{ __html: html }} />
+    <div dangerouslySetInnerHTML={{ __html: html }} suppressHydrationWarning />
   );
 }
 """

@@ -171,10 +171,13 @@ export const useStore = create<StoreState>((set, get) => ({
         }
         return data.port;
       }
+
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.detail || `Failed to start preview server (${res.status})`);
     } catch (e) {
       console.error(`Failed to start preview server for ${projectId}:`, e);
+      throw e;
     }
-    return null;
   },
 
   stopPreview: async (projectId: string) => {
@@ -192,9 +195,14 @@ export const useStore = create<StoreState>((set, get) => ({
             },
           });
         }
+        return;
       }
+
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.detail || `Failed to stop preview server (${res.status})`);
     } catch (e) {
       console.error(`Failed to stop preview server for ${projectId}:`, e);
+      throw e;
     }
   },
 

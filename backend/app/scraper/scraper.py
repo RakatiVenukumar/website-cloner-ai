@@ -91,22 +91,19 @@ class WebsiteScraper:
                         link["href"] = relative_path
                         css_files.append(relative_path)
             
-            # 2. Download scripts
-            for script in soup.find_all("script", src=True):
-                src = script.get("src")
-                if src:
-                    abs_src = urllib.parse.urljoin(url, src)
-                    filename = os.path.basename(urllib.parse.urlparse(abs_src).path) or "script.js"
-                    filename = f"{hash(abs_src) & 0xffffffff}_{filename}"
-                    if not filename.endswith(".js"):
-                        filename += ".js"
-                        
-                    local_path = os.path.join(self.js_dir, filename)
-                    relative_path = f"assets/js/{filename}"
-                    
-                    success = await self._download_asset(abs_src, local_path)
-                    if success:
-                        script["src"] = relative_path
+            # 2. Remove all scripts and noscript to prevent runtime logic execution
+            for script in soup.find_all(["script", "noscript"]):
+                script.decompose()
+                
+            # Remove preload, prefetch, modulepreload for scripts
+            for link in soup.find_all("link"):
+                rel_attr = link.get("rel", [])
+                if isinstance(rel_attr, str):
+                    rel_attr = rel_attr.split()
+                if any(r in rel_attr for r in ["modulepreload", "prefetch"]):
+                    link.decompose()
+                elif "preload" in rel_attr and link.get("as") == "script":
+                    link.decompose()
             
             # 3. Download images
             for img in soup.find_all("img"):
